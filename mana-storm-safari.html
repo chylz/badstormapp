@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1510">
+  <title>Mana Storm</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1510;
+      --panel: #15221b;
+      --panel-raised: #22332a;
+      --line: #304337;
+      --gold: #d2b76e;
+      --text: #f4f0e6;
+      --muted: #91a098;
+      --soft: #c6d0c9;
+      --white-mana: #f2e9c9;
+      --blue-mana: #67b6d8;
+      --black-mana: #aa9caf;
+      --red-mana: #e87855;
+      --green-mana: #75b884;
+      --colorless-mana: #b8c2be;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    button, select { font: inherit; }
+    button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .app { width: min(1040px, 100%); margin: 0 auto; padding: 28px 26px calc(24px + env(safe-area-inset-bottom)); }
+    .eyebrow { margin: 0 0 6px; color: var(--gold); font-weight: 750; font-size: 12px; letter-spacing: .16em; }
+    h1 { margin: 0; font-size: clamp(25px, 4vw, 32px); letter-spacing: -.03em; }
+    .subtitle { margin: 5px 0 22px; color: var(--muted); font-size: 14px; }
+    .dashboard { display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+    .sidebar { display: grid; align-content: start; gap: 10px; }
+    .panel, .mana-row, .spell-counter { background: var(--panel); border: 1px solid rgba(255,255,255,.025); border-radius: 14px; }
+    .side-panel { padding: 11px 12px; }
+    .small-label { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: .08em; }
+    .life-controls { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+    .life-value { min-width: 38px; text-align: center; font-size: 21px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .format-select { width: 100%; height: 38px; padding: 0 10px; color: var(--text); background: #26372d; border: 1px solid #405348; border-radius: 9px; font-weight: 700; }
+    .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .summary-card { min-width: 0; min-height: 112px; padding: 12px 15px; display: flex; flex-direction: column; justify-content: center; }
+    .pool-controls { display: flex; align-items: center; gap: 8px; }
+    .pool-value { min-width: 66px; text-align: center; font-size: 38px; font-weight: 760; line-height: 1; font-variant-numeric: tabular-nums; }
+    .storm-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+    .storm-value { min-width: 54px; text-align: center; color: var(--gold); font-size: 30px; font-weight: 760; line-height: 1; font-variant-numeric: tabular-nums; }
+    .lethal { color: #f1cf77; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .step { width: 36px; height: 36px; display: inline-grid; place-items: center; padding: 0; border: 1px solid #475e4e; border-radius: 9px; background: #27392e; color: var(--gold); font-size: 22px; line-height: 1; font-weight: 700; cursor: pointer; }
+    .step:active, .reset:active { transform: scale(.96); background: #344b3b; }
+    .hint { margin: 17px 0 8px; color: var(--muted); font-size: 12px; }
+    .mana-list { display: grid; gap: 7px; }
+    .mana-row { min-height: 56px; display: flex; align-items: center; gap: 11px; padding: 8px 9px 8px 12px; cursor: pointer; }
+    .mana-row:active { background: #1b2b22; }
+    .mana-symbol { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 50%; background: var(--panel-raised); font-weight: 800; font-size: 18px; }
+    .mana-name { flex: 1; color: var(--soft); font-size: 12px; font-weight: 750; letter-spacing: .04em; }
+    .mana-count { width: 34px; text-align: center; font-size: 20px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .pauper { margin-top: 16px; }
+    .pauper[hidden] { display: none; }
+    .pauper-title { margin: 0 0 8px; color: var(--gold); font-size: 11px; letter-spacing: .08em; }
+    .pauper-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+    .spell-counter { min-width: 0; min-height: 82px; padding: 8px 5px 6px; display: flex; flex-direction: column; justify-content: space-between; }
+    .spell-name { min-height: 27px; display: grid; place-items: center; text-align: center; color: var(--soft); font-size: 10px; line-height: 1.2; font-weight: 700; }
+    .spell-controls { display: flex; justify-content: center; align-items: center; gap: 3px; }
+    .spell-controls .step { width: 27px; height: 27px; font-size: 18px; border-radius: 7px; }
+    .spell-value { min-width: 28px; text-align: center; font-size: 16px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .footer { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .footer-hint { color: var(--muted); font-size: 12px; }
+    .reset { height: 40px; padding: 0 17px; border: 1px solid #405348; border-radius: 10px; background: #233128; color: var(--soft); font-size: 12px; font-weight: 750; letter-spacing: .05em; cursor: pointer; }
+    @media (max-width: 680px) {
+      .app { padding: max(18px, env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom)); }
+      .subtitle { margin-bottom: 16px; }
+      .dashboard { grid-template-columns: 1fr; gap: 10px; }
+      .sidebar { grid-template-columns: 1fr 1fr; align-items: stretch; }
+      .side-panel { min-width: 0; }
+      .summary { gap: 9px; }
+      .summary-card { min-height: 100px; padding: 10px; }
+      .pool-controls { gap: 5px; }
+      .pool-value { min-width: 42px; font-size: 33px; }
+      .storm-controls { gap: 3px; }
+      .storm-value { min-width: 38px; font-size: 27px; }
+      .storm-controls .step { width: 32px; height: 32px; }
+      .lethal { flex-basis: 100%; padding-left: 2px; font-size: 10px; }
+      .pauper-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .spell-counter:last-child { grid-column: 1 / -1; }
+      .spell-counter { min-height: 72px; }
+    }
+    @media (max-width: 360px) {
+      .app { padding-left: 11px; padding-right: 11px; }
+      .step { width: 32px; height: 32px; }
+      .mana-row { gap: 7px; padding-left: 8px; }
+      .mana-name { font-size: 11px; }
+      .pool-value { min-width: 35px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <p class="eyebrow">MANA / STORM</p>
+      <h1>The stack is yours.</h1>
+      <p class="subtitle">A clean table-side counter</p>
+    </header>
+
+    <section class="dashboard" aria-label="Game counters">
+      <aside class="sidebar">
+        <section class="panel side-panel" aria-label="Life total">
+          <p class="small-label">LIFE TOTAL</p>
+          <div class="life-controls">
+            <button class="step" id="life-minus" aria-label="Lose one life">−</button>
+            <output class="life-value" id="life">20</output>
+            <button class="step" id="life-plus" aria-label="Gain one life">+</button>
+          </div>
+        </section>
+        <section class="panel side-panel">
+          <label class="small-label" for="format">FORMAT</label>
+          <select class="format-select" id="format">
+            <option>Modern/Pioneer</option>
+            <option>Legacy</option>
+            <option>Pauper</option>
+          </select>
+        </section>
+      </aside>
+
+      <div class="summary">
+        <section class="panel summary-card" aria-label="Mana pool">
+          <p class="small-label">MANA POOL</p>
+          <div class="pool-controls">
+            <button class="step" id="pool-minus" aria-label="Remove one mana from pool" title="Remove one mana from pool">−</button>
+            <output class="pool-value" id="pool">0</output>
+            <button class="step" id="pool-plus" aria-label="Add one colorless mana" title="Add one colorless mana">+</button>
+          </div>
+        </section>
+        <section class="panel summary-card" aria-label="Storm count">
+          <p class="small-label">STORM</p>
+          <div class="storm-controls">
+            <button class="step" id="storm-minus" aria-label="Decrease storm">−</button>
+            <output class="storm-value" id="storm">0</output>
+            <button class="step" id="storm-plus" aria-label="Increase storm">+</button>
+            <span class="lethal" id="lethal" hidden>TENdrils is lethal!</span>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <p class="hint">Tap a mana row to add one. Use − / + to adjust.</p>
+    <section class="mana-list" aria-label="Mana by color" id="mana-list"></section>
+
+    <section class="pauper" id="pauper" hidden aria-label="Pauper card counters">
+      <h2 class="pauper-title">PAUPER SPELLS</h2>
+      <div class="pauper-grid" id="pauper-grid"></div>
+    </section>
+
+    <footer class="footer">
+      <span class="footer-hint" id="footer-hint">Use + to add storm</span>
+      <button class="reset" id="reset">RESET</button>
+    </footer>
+  </main>
+
+  <script>
+    (() => {
+      const manaTypes = [
+        { name: "WHITE", symbol: "W", css: "--white-mana" },
+        { name: "BLUE", symbol: "U", css: "--blue-mana" },
+        { name: "BLACK", symbol: "B", css: "--black-mana" },
+        { name: "RED", symbol: "R", css: "--red-mana" },
+        { name: "GREEN", symbol: "G", css: "--green-mana" },
+        { name: "COLORLESS", symbol: "◇", css: "--colorless-mana" }
+      ];
+      const pauperNames = ["Dark Ritual", "Cabal Ritual", "Songs of the Damned", "Reaping the Graves", "Rowan's Grim Search"];
+      const defaults = { mana: [0, 0, 0, 0, 0, 0], storm: 0, life: 20, format: "Modern/Pioneer", pauper: [4, 4, 4, 4, 4] };
+      let state = loadState();
+      const $ = id => document.getElementById(id);
+      const manaList = $("mana-list");
+      const pauperGrid = $("pauper-grid");
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("mana-storm-state"));
+          if (!saved || !Array.isArray(saved.mana)) return structuredClone(defaults);
+          return {
+            mana: defaults.mana.map((v, i) => safeCount(saved.mana[i], v)),
+            storm: safeCount(saved.storm, 0),
+            life: Number.isFinite(saved.life) ? saved.life : 20,
+            format: ["Modern/Pioneer", "Legacy", "Pauper"].includes(saved.format) ? saved.format : "Modern/Pioneer",
+            pauper: defaults.pauper.map((v, i) => safeCount(saved.pauper && saved.pauper[i], v))
+          };
+        } catch (_) { return structuredClone(defaults); }
+      }
+      function safeCount(value, fallback) { return Number.isSafeInteger(value) && value >= 0 ? value : fallback; }
+      function save() {
+        try { localStorage.setItem("mana-storm-state", JSON.stringify(state)); } catch (_) { /* The tracker still works for this page session. */ }
+      }
+      function makeStep(text, label, action, small = false) {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "step" + (small ? " small-step" : "");
+        button.textContent = text; button.setAttribute("aria-label", label);
+        button.addEventListener("click", event => { event.stopPropagation(); action(); });
+        return button;
+      }
+      manaTypes.forEach((type, i) => {
+        const row = document.createElement("div"); row.className = "mana-row"; row.setAttribute("role", "group");
+        row.setAttribute("aria-label", type.name + " mana. Tap row to add one.");
+        const symbol = document.createElement("span"); symbol.className = "mana-symbol"; symbol.textContent = type.symbol;
+        symbol.style.color = `var(${type.css})`;
+        const name = document.createElement("span"); name.className = "mana-name"; name.textContent = type.name;
+        const count = document.createElement("output"); count.className = "mana-count"; count.id = `mana-${i}`;
+        row.append(symbol, name,
+          makeStep("−", `Remove one ${type.name.toLowerCase()} mana`, () => { state.mana[i] = Math.max(0, state.mana[i] - 1); render(); }),
+          count,
+          makeStep("+", `Add one ${type.name.toLowerCase()} mana`, () => { state.mana[i]++; render(); }));
+        row.addEventListener("click", () => { state.mana[i]++; render(); });
+        manaList.append(row);
+      });
+
+      pauperNames.forEach((name, i) => {
+        const card = document.createElement("article"); card.className = "spell-counter";
+        const title = document.createElement("div"); title.className = "spell-name"; title.textContent = name;
+        const controls = document.createElement("div"); controls.className = "spell-controls";
+        const count = document.createElement("output"); count.className = "spell-value"; count.id = `pauper-${i}`;
+        controls.append(
+          makeStep("−", `Remove one ${name}`, () => { state.pauper[i] = Math.max(0, state.pauper[i] - 1); render(); }, true),
+          count,
+          makeStep("+", `Add one ${name}`, () => { state.pauper[i]++; render(); }, true));
+        card.append(title, controls); pauperGrid.append(card);
+      });
+
+      $("life-minus").addEventListener("click", () => { state.life--; render(); });
+      $("life-plus").addEventListener("click", () => { state.life++; render(); });
+      $("pool-plus").addEventListener("click", () => { state.mana[5]++; render(); });
+      $("pool-minus").addEventListener("click", () => {
+        for (let i = state.mana.length - 1; i >= 0; i--) {
+          if (state.mana[i] > 0) { state.mana[i]--; break; }
+        }
+        render();
+      });
+      $("storm-minus").addEventListener("click", () => { state.storm = Math.max(0, state.storm - 1); render(); });
+      $("storm-plus").addEventListener("click", () => { state.storm++; render(); });
+      $("format").addEventListener("change", event => { state.format = event.target.value; render(); });
+      $("reset").addEventListener("click", () => {
+        if (!window.confirm("Reset mana, storm, life, and Pauper spell counters? Pauper counters return to 4.")) return;
+        state = structuredClone(defaults); render();
+      });
+
+      function render() {
+        $("life").textContent = state.life;
+        $("pool").textContent = state.mana.reduce((sum, count) => sum + count, 0);
+        $("storm").textContent = state.storm;
+        $("format").value = state.format;
+        manaTypes.forEach((_, i) => { $(`mana-${i}`).textContent = state.mana[i]; });
+        pauperNames.forEach((_, i) => { $(`pauper-${i}`).textContent = state.pauper[i]; });
+        $("lethal").hidden = !(state.format === "Legacy" && state.storm === 9);
+        $("pauper").hidden = state.format !== "Pauper";
+        save();
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
